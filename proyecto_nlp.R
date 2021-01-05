@@ -35,8 +35,10 @@ names(alexa_reviews) <- c('valoracion','fecha','producto','comentario','feedback
 ggplot(data = alexa_reviews, mapping = aes(x = valoracion, fill = as.factor(valoracion))) + 
   geom_bar() +
   labs(x = "valoracion", y = "Cantidad", fill = "valoracion")+ 
+  ggtitle("Valoraciones hechas sobre los productos")+
   scale_fill_manual("leyenda", values = c("1" = "#D9EEC2", "2" = "#C6EC9D", "3" = "#B6EA7E",
-                                         "4" = "#A4E859", "5"= "#8BF01D"))
+                                         "4" = "#A4E859", "5"= "#8BF01D"))+
+  theme(plot.title = element_text(hjust = 0.5))
 
 
 #------------------------------------LIMPIEZA DEL DATA SET-------------------------------------------------------
@@ -59,7 +61,9 @@ corpus <- tm_map(corpus,removeNumbers)
 corpus <- tm_map(corpus,stripWhitespace)
 
 #Eliminamos aquellas palabras que no aportan información
-corpus <- tm_map(corpus,removeWords, c(stopwords("en")))
+corpus <- tm_map(corpus,removeWords, c(stopwords("en"),"echo","alexa","music","sound","dot","set",
+                                       "amazon","product","get","speaker","home","play",
+                                       "device","still","time","just","will"))
 
 #-----------------------------------------CREACION MATRIZ DE TERMINOS--------------------------------------------------
 
@@ -72,7 +76,7 @@ head(data,5)
 
 
 #Mostramos cuales son las palabras más frecuentes
-barplot(data[1:6,]$freq, las = 2, names.arg = data[1:6,]$word,ylim = c(0,1000),
+barplot(data[1:11,]$freq, las = 2, names.arg = data[1:11,]$word,ylim = c(0,1000),
         col ="lightgreen", main ="Palabras más frecuentes de las reviews",
         ylab = "Frecuencia de palabras")
 
@@ -84,9 +88,16 @@ set.seed(1234)
 wordcloud(words = data$word, freq = data$freq, min.freq = 1, max.words =140,
           random.order=FALSE, rot.per = 0.35, colors=brewer.pal(8,"Dark2"))
 
-#Esta función se encarga de mostrar cual es la correlación que tienen con otras palabras aquellas palabras que
-#tienen una frecuencia de aparicion en las reviews mayor-igual a 400
-findAssocs(matrix_corpus, terms = findFreqTerms(matrix_corpus, lowfreq = 400), corlimit = 0.25)
+
+#Nube de palabras diferenciando entre palabras positivas y negativas con bing
+a <-data %>% inner_join(get_sentiments("bing")) 
+a$sentiment<-replace(a$sentiment, a$sentiment == "positive",0) 
+a$sentiment<-replace(a$sentiment, a$sentiment == "negative",1) 
+colour = ifelse(a$sentiment < 1,"#2CBD52","#BD2C2C")
+
+set.seed(1234)
+wordcloud(words = a$word, freq = a$freq, min.freq = 1, max.words =140,
+          random.order=FALSE, rot.per = 0.35, colors=colour,ordered.colors=TRUE)
 
 
 #-----------------------------------------ANALISIS DE SENTIMIENTOS---------------------------------------------------
@@ -136,6 +147,7 @@ plot(
   ylab= "Valor emocional"
 )
 
+
 #En estos plots tambien se puede observar de manera clara que los comentarios en su mayoría son positivos
 
 #Aqui lo que se ha utilizado es la función get_nrc_sentiment, la cual devuelve una matriz de 10 columnas
@@ -147,10 +159,12 @@ data_sentiment <- colSums(data_sentiment)
 
 #Aqui se muestra un diagrama de barras donde se muestra cuantas palabras asociadas a cada sentimiento hay en
 #los comentarios
-barplot(data_sentiment)
+barplot(data_sentiment,col=brewer.pal(8,"Dark2"),ylim = c(0,5000),
+        ylab = "frecuencia de palabras",las=2,cex.names=.9, main = "Palabras de los comentarios asociados a sentimientos")
 
 
 #Esta es la diferenciacion entre comentarios positivos y negativos
-barplot(data_sentiment[c("negative","positive")],ylim=c(0,5000), col = c("#BD2C2C","#2CBD52"))
+barplot(data_sentiment[c("negative","positive")],ylim=c(0,5000), col = c("#BD2C2C","#2CBD52"),
+        main = "Palabras de los comentarios asociados a sentimientos positivos y negativos")
 
                     
