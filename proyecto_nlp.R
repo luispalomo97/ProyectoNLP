@@ -12,7 +12,7 @@ install.packages("syuzhet")
 install.packages("naivebayes")
 install.packages("e1071")
 install.packages("caret")
-
+install.packages("janitor")
 
 
 #Carga de paquetes
@@ -75,7 +75,7 @@ corpus <- tm_map(corpus,removeWords, c(stopwords("en"),"echo","alexa","music","s
 corpus <- tm_map(corpus,stripWhitespace)
 
 
-# Para crear el clasificador inicialemente nos hemos quedado con el conjunto de palabras tokenizadas anteriormente
+# Para crear el clasificador inicialemente nos hemos quedado con el conjunto de palabras del corpus
 datafr <- data.frame("coment"= corpus$content)
 
 #-----------------------------------------CREACION MATRIZ DE TERMINOS--------------------------------------------------
@@ -187,9 +187,7 @@ barplot(data_sentiment[c("negative","positive")],ylim=c(0,5000), col = c("#BD2C2
 
 
 #Con este clasificador bayesiano buscamos encontrar si a partir del producto, la valoración, el feedback y el numero
-# de letras por cada comentario ver si es capaz de generar un valoración similar a la que se ha hecho. Mediante
-# aquellos comentarios de caracter positivo podamos llegar a clasificar dichas valoraciones de manera similar
-#
+# de letras por cada comentario ver si es capaz de generar un valoración similar a la que se ha hecho. 
 
 # Realizamos una conversión a etiquetas de las valoraciones, es decir, de un valor númerico a uno categorico
 firstModif_1 <- function(){
@@ -218,15 +216,15 @@ return (dataset_a)
 
 
 firstModif_2 <- function(){
-  alexamod <- within(alexa_reviews, valoracion <- factor(valoracion, labels = c("uno","dos","tres","cuatro","cinco")))
+alexamod <- within(alexa_reviews, valoracion <- factor(valoracion, labels = c("uno","dos","tres","cuatro","cinco")))
   
-  #Juntamos el dataframe que contiene el conjunto de palabras del corpus y el dataframe que contiene las modificaciones
-  #descritas anteriormente. Es en este punto cuando añadimos la columna NumeroLetras, que contiene el numero de palabras
-  #de cada comentario
-  dataset_a <- rbind(select(alexamod,valoracion,producto,comentario,feedback))
-  dataset_a <- cbind(dataset_a,datafr)
-  dataset_a <- transform(dataset_a, "NumeroLetras"=str_count(coment, '\\w+'))  
-  dataset_a <- dataset_a[dataset_a$NumeroLetras > 0,]
+#Juntamos el dataframe que contiene el conjunto de palabras del corpus y el dataframe que contiene las modificaciones
+#descritas anteriormente. Es en este punto cuando añadimos la columna NumeroLetras, que contiene el numero de palabras
+#de cada comentario
+dataset_a <- rbind(select(alexamod,valoracion,producto,comentario,feedback))
+dataset_a <- cbind(dataset_a,datafr)
+dataset_a <- transform(dataset_a, "NumeroLetras"=str_count(coment, '\\w+'))  
+dataset_a <- dataset_a[dataset_a$NumeroLetras > 0,]
 dataset_a$producto <-NULL
 dataset_a$comentario <-NULL
 #dataset_a$NumeroLetras <-NULL
@@ -237,7 +235,7 @@ dataset_a$comentario <-NULL
 
 
 #Una vez creado el dataset adecuado procedemos a crear el conjunto de test y el de train
-# El conjunto de train será del 70% y el de test 30%
+# El conjunto de train será del 80% y el de test 20%
 # Primero se probará los datos con las 5 labels
 primerTest <- firstModif_2()
 trainIndex=createDataPartition(primerTest$valoracion, p=0.8, list = F)
@@ -252,7 +250,7 @@ confusionMatrix(tab)
 
 
 #De forma similar a anteriormente realizamos la division de los conjuntos de train y test
-# El conjunto de train será del 70% y el de test 30%
+# El conjunto de train será del 80% y el de test 20%
 # Ahora los datos estarán clasificados en : malo, regular y bueno
 segundoTest <- firstModif_1()
 trainIndex=createDataPartition(segundoTest$valoracion, p=0.8, list = F)
