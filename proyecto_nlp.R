@@ -1,5 +1,4 @@
 #-------------------------------------------PASOS PREVIOS-------------------------------------------------------
-install.packages("Rcpp", dependencies = TRUE, INSTALL_opts = '--no-lock')
 
 #instalación de paquetes
 install.packages("ggplot2")
